@@ -1,1 +1,1353 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculateur de Moyenne — S1/S2</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3d;
+    --accent: #6c63ff;
+    --accent2: #ff6b9d;
+    --accent3: #00d4aa;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --success: #00d4aa;
+    --warning: #ffb347;
+    --danger: #ff5757;
+  }
 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(ellipse at 20% 20%, rgba(108,99,255,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(255,107,157,0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(0,212,170,0.04) 0%, transparent 60%);
+    animation: bgPulse 8s ease-in-out infinite alternate;
+    pointer-events: none; z-index: 0;
+  }
+
+  @keyframes bgPulse {
+    0% { transform: rotate(0deg) scale(1); }
+    100% { transform: rotate(3deg) scale(1.05); }
+  }
+
+  .container {
+    position: relative; z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 60px;
+    animation: fadeDown 0.7s ease both;
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--accent); border: 1px solid var(--accent);
+    padding: 4px 14px; border-radius: 20px; margin-bottom: 20px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800; line-height: 1.1;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; margin-bottom: 12px;
+  }
+
+  .subtitle { color: var(--muted); font-size: 13px; letter-spacing: 1px; }
+
+  /* ── AI Scan Banner ── */
+  .ai-banner {
+    background: linear-gradient(135deg, rgba(108,99,255,0.12), rgba(0,212,170,0.08));
+    border: 1px solid rgba(108,99,255,0.35);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    animation: fadeUp 0.7s 0.1s ease both;
+  }
+
+  .ai-banner:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(108,99,255,0.3), 0 8px 32px rgba(108,99,255,0.15);
+    transform: translateY(-1px);
+  }
+
+  .ai-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+    box-shadow: 0 4px 16px rgba(108,99,255,0.3);
+  }
+
+  .ai-text h3 {
+    font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+    margin-bottom: 3px; color: var(--text);
+  }
+
+  .ai-text p { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+  .ai-arrow {
+    margin-left: auto; color: var(--accent); font-size: 18px; flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+
+  .ai-banner:hover .ai-arrow { transform: translateX(4px); }
+
+  /* ── AI Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.75);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+    backdrop-filter: blur(6px);
+  }
+
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    width: 100%; max-width: 520px;
+    transform: translateY(20px);
+    transition: transform 0.3s;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px; font-weight: 800;
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .modal-close {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .modal-close:hover { color: var(--text); border-color: #4a4a6a; }
+
+  /* Drop Zone */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(108,99,255,0.05);
+  }
+
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+
+  .drop-icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+  .drop-title {
+    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .drop-sub { font-size: 11px; color: var(--muted); }
+
+  /* Preview */
+  #imgPreview {
+    width: 100%; border-radius: 10px; margin-bottom: 16px;
+    display: none; border: 1px solid var(--border);
+    max-height: 220px; object-fit: cover;
+  }
+
+  /* Scan button */
+  .scan-btn {
+    width: 100%; padding: 16px;
+    border: none; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    color: #fff; font-family: 'Syne', sans-serif;
+    font-size: 15px; font-weight: 700; letter-spacing: 0.5px;
+    cursor: pointer; transition: all 0.3s;
+    box-shadow: 0 6px 20px rgba(108,99,255,0.3);
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+
+  .scan-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(108,99,255,0.4); }
+  .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Progress */
+  .scan-progress {
+    margin-top: 16px;
+    display: none;
+  }
+
+  .progress-step {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 8px;
+    font-size: 12px; color: var(--muted);
+    transition: all 0.3s;
+  }
+
+  .progress-step.active { color: var(--text); background: var(--surface2); }
+  .progress-step.done { color: var(--accent3); }
+  .progress-step.done .step-icon::after { content: '✓'; }
+
+  .step-icon {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; flex-shrink: 0;
+  }
+
+  .progress-step.active .step-icon {
+    border-color: var(--accent);
+    animation: spinPulse 1s linear infinite;
+  }
+
+  .progress-step.done .step-icon { border-color: var(--accent3); background: rgba(0,212,170,0.1); }
+
+  @keyframes spinPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(108,99,255,0.4); }
+    50% { box-shadow: 0 0 0 4px rgba(108,99,255,0); }
+  }
+
+  /* AI result preview */
+  .ai-result {
+    margin-top: 16px; display: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 12px; line-height: 1.7;
+  }
+
+  .ai-result.show { display: block; }
+
+  .ai-result-title {
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    margin-bottom: 10px; color: var(--accent3);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .filled-tag {
+    display: inline-block; font-size: 9px; letter-spacing: 1px;
+    background: rgba(0,212,170,0.15); color: var(--accent3);
+    border: 1px solid rgba(0,212,170,0.3);
+    padding: 2px 8px; border-radius: 10px;
+  }
+
+  .autofill-btn {
+    width: 100%; padding: 12px; margin-top: 12px;
+    border: none; border-radius: 10px;
+    background: rgba(0,212,170,0.15);
+    color: var(--accent3);
+    border: 1px solid rgba(0,212,170,0.3);
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+  }
+
+  .autofill-btn:hover { background: rgba(0,212,170,0.25); }
+
+  /* Sem grid */
+  .sem-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px; margin-bottom: 40px;
+    animation: fadeUp 0.7s 0.15s ease both;
+  }
+
+  .sem-btn {
+    position: relative; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 16px;
+    padding: 28px 20px; cursor: pointer;
+    transition: all 0.3s ease; text-align: center; overflow: hidden;
+  }
+
+  .sem-btn::before {
+    content: ''; position: absolute; inset: 0;
+    opacity: 0; transition: opacity 0.3s; border-radius: inherit;
+  }
+
+  .sem-btn.s1::before { background: linear-gradient(135deg, rgba(108,99,255,0.15), rgba(108,99,255,0.05)); }
+  .sem-btn.s2::before { background: linear-gradient(135deg, rgba(255,107,157,0.15), rgba(255,107,157,0.05)); }
+  .sem-btn:hover::before, .sem-btn.active::before { opacity: 1; }
+  .sem-btn.active.s1 { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 8px 32px rgba(108,99,255,0.2); }
+  .sem-btn.active.s2 { border-color: var(--accent2); box-shadow: 0 0 0 1px var(--accent2), 0 8px 32px rgba(255,107,157,0.2); }
+  .sem-btn:hover { transform: translateY(-2px); }
+
+  .sem-num {
+    font-family: 'Syne', sans-serif; font-size: 3rem; font-weight: 800;
+    line-height: 1; margin-bottom: 8px;
+  }
+  .s1 .sem-num { color: var(--accent); }
+  .s2 .sem-num { color: var(--accent2); }
+  .sem-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+
+  /* Mode bar */
+  .mode-bar {
+    display: flex; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 6px; gap: 6px; margin-bottom: 40px;
+    animation: fadeUp 0.7s 0.25s ease both;
+  }
+
+  .mode-btn {
+    flex: 1; padding: 12px; border-radius: 8px; border: none;
+    cursor: pointer; font-family: 'DM Mono', monospace;
+    font-size: 12px; letter-spacing: 0.5px;
+    background: transparent; color: var(--muted); transition: all 0.25s;
+  }
+
+  .mode-btn.active {
+    background: var(--accent); color: #fff;
+    box-shadow: 0 4px 16px rgba(108,99,255,0.3);
+  }
+
+  /* Panels */
+  .panel { display: none; animation: fadeUp 0.4s ease both; }
+  .panel.visible { display: block; }
+
+  /* Subject card */
+  .subject-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px 24px; margin-bottom: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .subject-card:hover { border-color: #3a3a55; }
+  .subject-card.ai-filled { border-color: rgba(0,212,170,0.4); box-shadow: 0 0 0 1px rgba(0,212,170,0.15); }
+
+  .subject-header {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 14px;
+    flex-wrap: wrap; gap: 6px;
+  }
+
+  .subject-name {
+    font-family: 'Syne', sans-serif; font-size: 13px;
+    font-weight: 600; color: var(--text); letter-spacing: 0.3px;
+  }
+
+  .coef-badge {
+    font-size: 10px; padding: 3px 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; color: var(--muted);
+  }
+
+  .fields-row {
+    display: grid; gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+
+  .field-group { display: flex; flex-direction: column; gap: 5px; }
+
+  .field-group label {
+    font-size: 10px; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--muted);
+  }
+
+  .field-group input {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    color: var(--text); font-family: 'DM Mono', monospace;
+    font-size: 14px; transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%; outline: none;
+  }
+
+  .field-group input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(108,99,255,0.15);
+  }
+
+  .field-group input.ai-highlight {
+    border-color: var(--accent3) !important;
+    box-shadow: 0 0 0 3px rgba(0,212,170,0.15) !important;
+    animation: aiPop 0.4s ease;
+  }
+
+  @keyframes aiPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+  }
+
+  .field-group input::placeholder { color: var(--muted); }
+
+  .live-avg {
+    margin-top: 12px; font-size: 11px; color: var(--muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .live-avg span {
+    font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 15px; color: var(--accent3);
+  }
+
+  /* Calc button */
+  .calc-btn {
+    width: 100%; padding: 18px; margin-top: 28px;
+    border: none; border-radius: 14px;
+    background: linear-gradient(135deg, var(--accent), #8b5cf6);
+    color: #fff; font-family: 'Syne', sans-serif;
+    font-size: 16px; font-weight: 700; letter-spacing: 1px;
+    cursor: pointer; transition: all 0.3s;
+    box-shadow: 0 6px 24px rgba(108,99,255,0.3);
+    position: relative; overflow: hidden;
+  }
+
+  .calc-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(108,99,255,0.4); }
+  .calc-btn:active { transform: translateY(0); }
+
+  /* Result */
+  .result-box {
+    margin-top: 32px; padding: 32px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 18px; text-align: center;
+    display: none; animation: fadeUp 0.4s ease both;
+  }
+
+  .result-box.show { display: block; }
+
+  .result-label {
+    font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 12px;
+  }
+
+  .result-score {
+    font-family: 'Syne', sans-serif; font-size: 5rem;
+    font-weight: 800; line-height: 1; margin-bottom: 8px;
+  }
+
+  .result-status {
+    font-size: 13px; padding: 6px 20px;
+    border-radius: 20px; display: inline-block; margin-top: 12px;
+  }
+
+  .status-pass { background: rgba(0,212,170,0.15); color: var(--success); border: 1px solid rgba(0,212,170,0.3); }
+  .status-warn { background: rgba(255,179,71,0.15); color: var(--warning); border: 1px solid rgba(255,179,71,0.3); }
+  .status-fail { background: rgba(255,87,87,0.15); color: var(--danger); border: 1px solid rgba(255,87,87,0.3); }
+
+  .coming-soon { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .coming-soon .icon { font-size: 3rem; margin-bottom: 16px; }
+  .coming-soon h3 { font-family: 'Syne', sans-serif; font-size: 1.4rem; color: var(--text); margin-bottom: 8px; }
+  .coming-soon p { font-size: 12px; line-height: 1.7; }
+
+  .section-title {
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    color: var(--muted); margin: 28px 0 14px;
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 520px) {
+    .sem-grid { grid-template-columns: 1fr 1fr; }
+    .fields-row { grid-template-columns: 1fr 1fr; }
+    .result-score { font-size: 3.5rem; }
+    .ai-banner { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="badge">Université · Informatique · L1</div>
+    <h1>Calculateur<br>de Moyenne</h1>
+    <p class="subtitle">Semestre 1 & 2 — Résultats instantanés</p>
+  </header>
+
+  <!-- AI Scan Banner -->
+  <div class="ai-banner" onclick="openAIModal()">
+    <div class="ai-icon">🤖</div>
+    <div class="ai-text">
+      <h3>Remplissage automatique par IA</h3>
+      <p>Prends une photo de ton bulletin ou relève de notes —<br>l'IA lit et remplit tous les champs automatiquement.</p>
+    </div>
+    <div class="ai-arrow">→</div>
+  </div>
+
+  <!-- Semester selector -->
+  <div class="sem-grid">
+    <div class="sem-btn s1" onclick="selectSem(1)">
+      <div class="sem-num">S1</div>
+      <div class="sem-label">Semestre 1</div>
+    </div>
+    <div class="sem-btn s2" onclick="selectSem(2)">
+      <div class="sem-num">S2</div>
+      <div class="sem-label">Semestre 2</div>
+    </div>
+  </div>
+
+  <!-- Mode bar -->
+  <div class="mode-bar hidden" id="modeBar">
+    <button class="mode-btn active" onclick="selectMode('general', event)">📊 Moyenne générale</button>
+    <button class="mode-btn" onclick="selectMode('detail', event)">🔢 Par épreuves (DS + Exam)</button>
+  </div>
+
+  <!-- S1 General -->
+  <div class="panel hidden" id="s1-general">
+    <div class="section-title">Saisir vos moyennes de matières</div>
+
+    <div class="subject-card" id="card-g-m1">
+      <div class="subject-header"><div class="subject-name">Technologies Multimédias</div><div class="coef-badge">Coef 1.5</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g_m1" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',1)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g-m2">
+      <div class="subject-header"><div class="subject-name">Logique Formelle</div><div class="coef-badge">Coef 1.5</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g_m2" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',1)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g-m3">
+      <div class="subject-header"><div class="subject-name">Algèbre 1</div><div class="coef-badge">Coef 1.5</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g_m3" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',1)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g-m4">
+      <div class="subject-header"><div class="subject-name">Analyse 1</div><div class="coef-badge">Coef 1.5</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g_m4" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',1)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g-m5">
+      <div class="subject-header"><div class="subject-name">Algorithmique & Structures de Données</div><div class="coef-badge">Coef 2</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g_m5" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',1)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g-m6">
+      <div class="subject-header"><div class="subject-name">Atelier Programmation 1</div><div class="coef-badge">Coef 1.5</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g_m6" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',1)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g-m7">
+      <div class="subject-header"><div class="subject-name">Systèmes Logiques & Architecture</div><div class="coef-badge">Coef 2</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g_m7" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',1)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g-m8">
+      <div class="subject-header"><div class="subject-name">Système d'Exploitation 1</div><div class="coef-badge">Coef 1.5</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g_m8" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',1)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g-m9">
+      <div class="subject-header"><div class="subject-name">Anglais 1</div><div class="coef-badge">Coef 1</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g_m9" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',1)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g-m10">
+      <div class="subject-header"><div class="subject-name">Techniques de Communication 1</div><div class="coef-badge">Coef 1</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g_m10" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',1)"></div></div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate('general', 1)">Calculer la Moyenne Générale →</button>
+    <div class="result-box" id="result-s1-general"></div>
+  </div>
+
+  <!-- S1 Detail -->
+  <div class="panel hidden" id="s1-detail">
+    <div class="section-title">Saisir vos notes par épreuve</div>
+
+    <div class="subject-card" id="card-d-m1">
+      <div class="subject-header"><div class="subject-name">Technologies Multimédias</div><div class="coef-badge">Coef 1.5 · DS×15% + DSTP×15% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d_m1_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m1','tp',1)"></div>
+        <div class="field-group"><label>DSTP /20</label><input type="number" id="d_m1_dstp" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m1','tp',1)"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d_m1_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m1','tp',1)"></div>
+      </div>
+      <div class="live-avg" id="live_m1">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d-m2">
+      <div class="subject-header"><div class="subject-name">Logique Formelle</div><div class="coef-badge">Coef 1.5 · DS×30% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d_m2_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m2','std',1)"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d_m2_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m2','std',1)"></div>
+      </div>
+      <div class="live-avg" id="live_m2">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d-m3">
+      <div class="subject-header"><div class="subject-name">Algèbre 1</div><div class="coef-badge">Coef 1.5 · DS×30% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d_m3_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m3','std',1)"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d_m3_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m3','std',1)"></div>
+      </div>
+      <div class="live-avg" id="live_m3">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d-m4">
+      <div class="subject-header"><div class="subject-name">Analyse 1</div><div class="coef-badge">Coef 1.5 · DS×30% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d_m4_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m4','std',1)"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d_m4_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m4','std',1)"></div>
+      </div>
+      <div class="live-avg" id="live_m4">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d-m5">
+      <div class="subject-header"><div class="subject-name">Algorithmique & Structures de Données</div><div class="coef-badge">Coef 2 · DS×30% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d_m5_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m5','std',1)"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d_m5_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m5','std',1)"></div>
+      </div>
+      <div class="live-avg" id="live_m5">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d-m6">
+      <div class="subject-header"><div class="subject-name">Atelier Programmation 1</div><div class="coef-badge">Coef 1.5 · DS×15% + DSTP×15% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d_m6_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m6','tp',1)"></div>
+        <div class="field-group"><label>DSTP /20</label><input type="number" id="d_m6_dstp" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m6','tp',1)"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d_m6_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m6','tp',1)"></div>
+      </div>
+      <div class="live-avg" id="live_m6">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d-m7">
+      <div class="subject-header"><div class="subject-name">Systèmes Logiques & Architecture</div><div class="coef-badge">Coef 2 · DS×30% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d_m7_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m7','std',1)"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d_m7_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m7','std',1)"></div>
+      </div>
+      <div class="live-avg" id="live_m7">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d-m8">
+      <div class="subject-header"><div class="subject-name">Système d'Exploitation 1</div><div class="coef-badge">Coef 1.5 · DS×15% + DSTP×15% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d_m8_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m8','tp',1)"></div>
+        <div class="field-group"><label>DSTP /20</label><input type="number" id="d_m8_dstp" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m8','tp',1)"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d_m8_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m8','tp',1)"></div>
+      </div>
+      <div class="live-avg" id="live_m8">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d-m9">
+      <div class="subject-header"><div class="subject-name">Anglais 1</div><div class="coef-badge">Coef 1 · DS×50% + Oral×50%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS /20</label><input type="number" id="d_m9_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m9','ang',1)"></div>
+        <div class="field-group"><label>Oral /20</label><input type="number" id="d_m9_oral" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m9','ang',1)"></div>
+      </div>
+      <div class="live-avg" id="live_m9">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d-m10">
+      <div class="subject-header"><div class="subject-name">Techniques de Communication 1</div><div class="coef-badge">Coef 1 · DS1×50% + DS2×50%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d_m10_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m10','tc',1)"></div>
+        <div class="field-group"><label>DS2 /20</label><input type="number" id="d_m10_ds2" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc('m10','tc',1)"></div>
+      </div>
+      <div class="live-avg" id="live_m10">Moyenne : <span>—</span></div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate('detail', 1)">Calculer la Moyenne Générale →</button>
+    <div class="result-box" id="result-s1-detail"></div>
+  </div>
+
+  <!-- S2 General -->
+  <div class="panel hidden" id="s2-general">
+    <div class="section-title">Saisir vos moyennes de matières — S2</div>
+
+    <div class="subject-card" id="card-g2-m1">
+      <div class="subject-header"><div class="subject-name">Fondements des Bases de Données</div><div class="coef-badge">Coef 2</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g2_m1" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',2)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g2-m2">
+      <div class="subject-header"><div class="subject-name">Analyse 2</div><div class="coef-badge">Coef 1.5</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g2_m2" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',2)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g2-m3">
+      <div class="subject-header"><div class="subject-name">Algèbre 2</div><div class="coef-badge">Coef 1.5</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g2_m3" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',2)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g2-m4">
+      <div class="subject-header"><div class="subject-name">Programmation Python</div><div class="coef-badge">Coef 1</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g2_m4" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',2)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g2-m5">
+      <div class="subject-header"><div class="subject-name">Algorithmique, Structure de Données et Complexité</div><div class="coef-badge">Coef 1.5</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g2_m5" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',2)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g2-m6">
+      <div class="subject-header"><div class="subject-name">Atelier de Programmation 2</div><div class="coef-badge">Coef 1</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g2_m6" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',2)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g2-m7">
+      <div class="subject-header"><div class="subject-name">Fondements des Réseaux</div><div class="coef-badge">Coef 2</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g2_m7" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',2)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g2-m8">
+      <div class="subject-header"><div class="subject-name">Système d'Exploitation 2</div><div class="coef-badge">Coef 1.5</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g2_m8" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',2)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g2-m9">
+      <div class="subject-header"><div class="subject-name">Culture et Compétences Numériques</div><div class="coef-badge">Coef 1</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g2_m9" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',2)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g2-m10">
+      <div class="subject-header"><div class="subject-name">Techniques de Communication 2</div><div class="coef-badge">Coef 1</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g2_m10" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',2)"></div></div>
+    </div>
+    <div class="subject-card" id="card-g2-m11">
+      <div class="subject-header"><div class="subject-name">Anglais 2</div><div class="coef-badge">Coef 1</div></div>
+      <div class="fields-row"><div class="field-group"><label>Moyenne /20</label><input type="number" id="g2_m11" min="0" max="20" step="0.01" placeholder="0.00" oninput="updateResult('general',2)"></div></div>
+    </div>
+
+    <button class="calc-btn" style="background:linear-gradient(135deg,var(--accent2),#c44b7a);" onclick="calculate('general', 2)">Calculer la Moyenne Générale S2 →</button>
+    <div class="result-box" id="result-s2-general"></div>
+  </div>
+
+  <!-- S2 Detail -->
+  <div class="panel hidden" id="s2-detail">
+    <div class="section-title">Saisir vos notes par épreuve — S2</div>
+
+    <div class="subject-card" id="card-d2-m1">
+      <div class="subject-header"><div class="subject-name">Fondements des Bases de Données</div><div class="coef-badge">Coef 2 · DS×30% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d2_m1_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m1','std')"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d2_m1_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m1','std')"></div>
+      </div>
+      <div class="live-avg" id="live2_m1">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d2-m2">
+      <div class="subject-header"><div class="subject-name">Analyse 2</div><div class="coef-badge">Coef 1.5 · DS×30% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d2_m2_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m2','std')"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d2_m2_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m2','std')"></div>
+      </div>
+      <div class="live-avg" id="live2_m2">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d2-m3">
+      <div class="subject-header"><div class="subject-name">Algèbre 2</div><div class="coef-badge">Coef 1.5 · DS×30% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d2_m3_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m3','std')"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d2_m3_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m3','std')"></div>
+      </div>
+      <div class="live-avg" id="live2_m3">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d2-m4">
+      <div class="subject-header"><div class="subject-name">Programmation Python</div><div class="coef-badge">Coef 1 · DS×15% + DSTP×15% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d2_m4_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m4','tp')"></div>
+        <div class="field-group"><label>DSTP /20</label><input type="number" id="d2_m4_dstp" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m4','tp')"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d2_m4_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m4','tp')"></div>
+      </div>
+      <div class="live-avg" id="live2_m4">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d2-m5">
+      <div class="subject-header"><div class="subject-name">Algorithmique, Structure de Données et Complexité</div><div class="coef-badge">Coef 1.5 · DS×30% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d2_m5_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m5','std')"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d2_m5_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m5','std')"></div>
+      </div>
+      <div class="live-avg" id="live2_m5">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d2-m6">
+      <div class="subject-header"><div class="subject-name">Atelier de Programmation 2</div><div class="coef-badge">Coef 1 · DS×15% + DSTP×15% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d2_m6_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m6','tp')"></div>
+        <div class="field-group"><label>DSTP /20</label><input type="number" id="d2_m6_dstp" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m6','tp')"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d2_m6_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m6','tp')"></div>
+      </div>
+      <div class="live-avg" id="live2_m6">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d2-m7">
+      <div class="subject-header"><div class="subject-name">Fondements des Réseaux</div><div class="coef-badge">Coef 2 · DS×15% + DSTP×15% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d2_m7_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m7','tp')"></div>
+        <div class="field-group"><label>DSTP /20</label><input type="number" id="d2_m7_dstp" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m7','tp')"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d2_m7_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m7','tp')"></div>
+      </div>
+      <div class="live-avg" id="live2_m7">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d2-m8">
+      <div class="subject-header"><div class="subject-name">Système d'Exploitation 2</div><div class="coef-badge">Coef 1.5 · DS×30% + Exam×70%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d2_m8_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m8','std')"></div>
+        <div class="field-group"><label>Examen /20</label><input type="number" id="d2_m8_ex" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m8','std')"></div>
+      </div>
+      <div class="live-avg" id="live2_m8">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d2-m9">
+      <div class="subject-header"><div class="subject-name">Culture et Compétences Numériques</div><div class="coef-badge">Coef 1 · DS1×50% + DS2×50%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d2_m9_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m9','tc')"></div>
+        <div class="field-group"><label>DS2 /20</label><input type="number" id="d2_m9_ds2" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m9','tc')"></div>
+      </div>
+      <div class="live-avg" id="live2_m9">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d2-m10">
+      <div class="subject-header"><div class="subject-name">Techniques de Communication 2</div><div class="coef-badge">Coef 1 · DS1×50% + DS2×50%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS1 /20</label><input type="number" id="d2_m10_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m10','tc')"></div>
+        <div class="field-group"><label>DS2 /20</label><input type="number" id="d2_m10_ds2" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m10','tc')"></div>
+      </div>
+      <div class="live-avg" id="live2_m10">Moyenne : <span>—</span></div>
+    </div>
+
+    <div class="subject-card" id="card-d2-m11">
+      <div class="subject-header"><div class="subject-name">Anglais 2</div><div class="coef-badge">Coef 1 · DS×50% + Oral×50%</div></div>
+      <div class="fields-row">
+        <div class="field-group"><label>DS /20</label><input type="number" id="d2_m11_ds1" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m11','ang')"></div>
+        <div class="field-group"><label>Oral /20</label><input type="number" id="d2_m11_oral" min="0" max="20" step="0.01" placeholder="0.00" oninput="liveCalc2('m11','ang')"></div>
+      </div>
+      <div class="live-avg" id="live2_m11">Moyenne : <span>—</span></div>
+    </div>
+
+    <button class="calc-btn" style="background:linear-gradient(135deg,var(--accent2),#c44b7a);" onclick="calculate('detail', 2)">Calculer la Moyenne Générale S2 →</button>
+    <div class="result-box" id="result-s2-detail"></div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     AI MODAL
+══════════════════════════════════════════ -->
+<div class="modal-overlay" id="aiModal" onclick="closeOnBg(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🤖 Scan IA de bulletin</div>
+      <button class="modal-close" onclick="closeAIModal()">✕</button>
+    </div>
+
+    <!-- Drop zone -->
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="imageInput" accept="image/*" onchange="onFileSelect(event)">
+      <div class="drop-icon">📄</div>
+      <div class="drop-title">Dépose ton bulletin ici</div>
+      <div class="drop-sub">ou clique pour choisir une image · JPG, PNG, WEBP</div>
+    </div>
+
+    <img id="imgPreview" alt="Aperçu">
+
+    <!-- Scan target -->
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Remplir pour :</div>
+      <div style="display:flex;gap:8px;">
+        <button class="mode-btn active" id="scanModeGeneral" onclick="setScanTarget('general')" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:10px;">📊 Moyennes générales</button>
+        <button class="mode-btn" id="scanModeDetail" onclick="setScanTarget('detail')" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:10px;">🔢 DS + Examens</button>
+      </div>
+    </div>
+
+    <button class="scan-btn" id="scanBtn" onclick="runAIScan()" disabled>
+      <span id="scanBtnText">✨ Analyser l'image</span>
+    </button>
+
+    <!-- Progress steps -->
+    <div class="scan-progress" id="scanProgress">
+      <div class="progress-step" id="step1">
+        <div class="step-icon"></div>
+        Envoi de l'image à l'IA...
+      </div>
+      <div class="progress-step" id="step2">
+        <div class="step-icon"></div>
+        Lecture des matières et notes...
+      </div>
+      <div class="progress-step" id="step3">
+        <div class="step-icon"></div>
+        Correspondance avec les champs...
+      </div>
+    </div>
+
+    <!-- AI result -->
+    <div class="ai-result" id="aiResult">
+      <div class="ai-result-title">✅ Données extraites <span class="filled-tag">PRÊT</span></div>
+      <div id="aiResultText"></div>
+      <button class="autofill-btn" onclick="applyAutofill()">⚡ Appliquer et remplir les champs →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentSem = 0;
+  let currentMode = 'general';
+  let scanTarget = 'general';
+  let capturedImageBase64 = null;
+  let capturedImageType = 'image/jpeg';
+  let parsedAIData = null;
+
+  // ── Semester / Mode ──
+  function selectSem(sem) {
+    currentSem = sem;
+    document.querySelectorAll('.sem-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.sem-btn')[sem - 1].classList.add('active');
+    const modeBar = document.getElementById('modeBar');
+    modeBar.classList.remove('hidden');
+    showPanel('s' + sem + '-' + currentMode);
+  }
+
+  function selectMode(mode, e) {
+    currentMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    if (e && e.target) e.target.classList.add('active');
+    if (currentSem >= 1) showPanel('s' + currentSem + '-' + mode);
+  }
+
+  function showPanel(id) {
+    document.querySelectorAll('.panel').forEach(p => { p.classList.remove('visible'); p.classList.add('hidden'); });
+    const panel = document.getElementById(id);
+    if (panel) { panel.classList.remove('hidden'); setTimeout(() => panel.classList.add('visible'), 10); }
+  }
+
+  // ── AI Modal ──
+  function openAIModal() {
+    document.getElementById('aiModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeAIModal() {
+    document.getElementById('aiModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  function closeOnBg(e) {
+    if (e.target === document.getElementById('aiModal')) closeAIModal();
+  }
+
+  function setScanTarget(target) {
+    scanTarget = target;
+    document.getElementById('scanModeGeneral').classList.toggle('active', target === 'general');
+    document.getElementById('scanModeDetail').classList.toggle('active', target === 'detail');
+  }
+
+  function onFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    // Normalize media type — API only accepts jpeg, png, gif, webp
+    const typeMap = { 'image/jpg': 'image/jpeg', 'image/jpeg': 'image/jpeg', 'image/png': 'image/png', 'image/webp': 'image/webp', 'image/gif': 'image/gif' };
+    capturedImageType = typeMap[file.type] || 'image/jpeg';
+    const reader = new FileReader();
+    reader.onload = ev => {
+      capturedImageBase64 = ev.target.result.split(',')[1];
+      const preview = document.getElementById('imgPreview');
+      preview.src = ev.target.result;
+      preview.style.display = 'block';
+      document.getElementById('scanBtn').disabled = false;
+      document.getElementById('aiResult').classList.remove('show');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Drag & drop
+  const dz = document.getElementById('dropZone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const typeMap = { 'image/jpg': 'image/jpeg', 'image/jpeg': 'image/jpeg', 'image/png': 'image/png', 'image/webp': 'image/webp', 'image/gif': 'image/gif' };
+      capturedImageType = typeMap[file.type] || 'image/jpeg';
+      const dt = new DataTransfer(); dt.items.add(file);
+      document.getElementById('imageInput').files = dt.files;
+      onFileSelect({ target: { files: dt.files } });
+    }
+  });
+
+  // ── AI Scan ──
+  function setStep(n, state) {
+    for (let i = 1; i <= 3; i++) {
+      const el = document.getElementById('step' + i);
+      el.classList.remove('active', 'done');
+      if (i < n) el.classList.add('done');
+      else if (i === n) el.classList.add(state);
+    }
+  }
+
+  async function runAIScan() {
+    if (!capturedImageBase64) return;
+    const btn = document.getElementById('scanBtn');
+    btn.disabled = true;
+    document.getElementById('scanBtnText').textContent = 'Analyse en cours...';
+    document.getElementById('scanProgress').style.display = 'block';
+    document.getElementById('aiResult').classList.remove('show');
+    parsedAIData = null;
+
+    const isDetail = scanTarget === 'detail';
+
+    const prompt = isDetail
+      ? `Tu regardes une image d'un relevé de notes ou bulletin universitaire algérien (informatique L1, Semestre 1).
+Extrais toutes les notes que tu vois. Pour chaque matière, cherche: DS1, DSTP (si présent), Examen/Exam.
+Les matières à identifier sont:
+- Technologies Multimédias (DS1, DSTP, Exam)
+- Logique Formelle (DS1, Exam)
+- Algèbre 1 (DS1, Exam)
+- Analyse 1 (DS1, Exam)
+- Algorithmique et Structures de Données (DS1, Exam)
+- Atelier Programmation 1 (DS1, DSTP, Exam)
+- Systèmes Logiques et Architecture (DS1, Exam)
+- Système d'Exploitation 1 (DS1, DSTP, Exam)
+- Anglais 1 (DS, Oral)
+- Techniques de Communication 1 (DS1, DS2)
+
+Réponds UNIQUEMENT en JSON valide, sans markdown, sans backticks, sans explication:
+{"m1":{"ds1":null,"dstp":null,"ex":null},"m2":{"ds1":null,"ex":null},"m3":{"ds1":null,"ex":null},"m4":{"ds1":null,"ex":null},"m5":{"ds1":null,"ex":null},"m6":{"ds1":null,"dstp":null,"ex":null},"m7":{"ds1":null,"ex":null},"m8":{"ds1":null,"dstp":null,"ex":null},"m9":{"ds1":null,"oral":null},"m10":{"ds1":null,"ds2":null}}
+Mets null si une note est absente ou illisible. Les notes sont sur 20.`
+      : `Tu regardes une image d'un relevé de notes ou bulletin universitaire algérien (informatique L1, Semestre 1).
+Extrais la moyenne (note finale sur 20) de chaque matière.
+Les matières sont:
+m1=Technologies Multimédias, m2=Logique Formelle, m3=Algèbre 1, m4=Analyse 1, m5=Algorithmique et Structures de Données, m6=Atelier Programmation 1, m7=Systèmes Logiques et Architecture des Ordinateurs, m8=Système d'Exploitation 1, m9=Anglais 1, m10=Techniques de Communication 1.
+
+Réponds UNIQUEMENT en JSON valide, sans markdown, sans backticks, sans explication:
+{"m1":null,"m2":null,"m3":null,"m4":null,"m5":null,"m6":null,"m7":null,"m8":null,"m9":null,"m10":null}
+Mets null si absent ou illisible. Les notes sont sur 20.`;
+
+    try {
+      setStep(1, 'active');
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: capturedImageType, data: capturedImageBase64 } },
+              { type: 'text', text: prompt }
+            ]
+          }]
+        })
+      });
+
+      setStep(2, 'active');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error?.message || `API error ${response.status}`);
+      }
+      if (!data.content || !Array.isArray(data.content)) {
+        throw new Error('Réponse inattendue de l\'API. Réessaie.');
+      }
+
+      const rawText = data.content.map(c => c.text || '').join('').trim();
+
+      setStep(3, 'active');
+
+      // Parse JSON safely
+      let cleaned = rawText.replace(/```json|```/g, '').trim();
+      // Extract JSON object if wrapped in text
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (jsonMatch) cleaned = jsonMatch[0];
+
+      parsedAIData = JSON.parse(cleaned);
+      parsedAIData._mode = scanTarget;
+
+      setStep(3, 'done');
+
+      // Build preview
+      const names = ['Technologies Multimédias','Logique Formelle','Algèbre 1','Analyse 1','Algorithmique','Atelier Programmation','Sys. Logiques','Sys. Exploitation','Anglais 1','Techniques Comm.'];
+      let preview = '<div style="display:grid;gap:6px;">';
+      let found = 0;
+      for (let i = 1; i <= 10; i++) {
+        const key = 'm' + i;
+        const d = parsedAIData[key];
+        if (!d) continue;
+        let vals = [];
+        if (typeof d === 'object') {
+          Object.entries(d).forEach(([k,v]) => { if (v !== null) { vals.push(k.toUpperCase()+': <strong>'+v+'</strong>'); found++; } });
+        } else if (d !== null) {
+          vals.push('<strong>'+d+'</strong> /20'); found++;
+        }
+        if (vals.length) {
+          preview += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--surface);border-radius:6px;font-size:11px;">
+            <span style="color:var(--muted)">${names[i-1]}</span>
+            <span style="color:var(--text)">${vals.join(' · ')}</span>
+          </div>`;
+        }
+      }
+      preview += '</div>';
+      if (found === 0) preview = '<p style="font-size:12px;color:var(--muted);text-align:center;padding:10px;">Aucune note trouvée dans l\'image. Essaie avec une image plus nette.</p>';
+
+      document.getElementById('aiResultText').innerHTML = preview;
+      document.getElementById('aiResult').classList.add('show');
+
+    } catch (err) {
+      console.error(err);
+      setStep(1, '');
+      document.getElementById('aiResultText').innerHTML = `<p style="color:var(--danger);font-size:12px;">Erreur: ${err.message}</p>`;
+      document.getElementById('aiResult').classList.add('show');
+    }
+
+    btn.disabled = false;
+    document.getElementById('scanBtnText').textContent = '✨ Analyser à nouveau';
+  }
+
+  // ── Apply autofill ──
+  function applyAutofill() {
+    if (!parsedAIData) return;
+    const mode = parsedAIData._mode;
+
+    // Switch to right panel/semester
+    if (currentSem !== 1) selectSem(1);
+    // Switch mode
+    currentMode = mode;
+    document.querySelectorAll('.mode-btn').forEach((b, i) => b.classList.toggle('active', (i === 0 && mode === 'general') || (i === 1 && mode === 'detail')));
+    showPanel('s1-' + mode);
+
+    // Small delay to ensure panel is visible before filling
+    setTimeout(() => {
+      for (let i = 1; i <= 10; i++) {
+        const key = 'm' + i;
+        const d = parsedAIData[key];
+        if (!d && d !== 0) continue;
+
+        if (mode === 'general') {
+          const val = (typeof d === 'object') ? null : d;
+          if (val !== null) setAndHighlight('g_m' + i, val, 'card-g-m' + i);
+        } else {
+          // detail mode
+          if (typeof d === 'object') {
+            Object.entries(d).forEach(([field, val]) => {
+              if (val === null) return;
+              let inputId = 'd_m' + i + '_' + field;
+              setAndHighlight(inputId, val, 'card-d-m' + i);
+            });
+            // Trigger live calc
+            const types = {1:'tp',2:'std',3:'std',4:'std',5:'std',6:'tp',7:'std',8:'tp',9:'ang',10:'tc'};
+            liveCalc('m'+i, types[i], 1);
+          }
+        }
+      }
+      closeAIModal();
+    }, 300);
+  }
+
+  function setAndHighlight(inputId, value, cardId) {
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    el.value = value;
+    el.classList.add('ai-highlight');
+    setTimeout(() => el.classList.remove('ai-highlight'), 2000);
+    const card = document.getElementById(cardId);
+    if (card) { card.classList.add('ai-filled'); setTimeout(() => card.classList.remove('ai-filled'), 3000); }
+  }
+
+  // ── Live calc per subject ──
+  function liveCalc(matiere, type, sem) {
+    let val;
+    if (type === 'std') {
+      const ds1 = parseFloat(document.getElementById('d_'+matiere+'_ds1')?.value);
+      const ex  = parseFloat(document.getElementById('d_'+matiere+'_ex')?.value);
+      if (!isNaN(ds1) && !isNaN(ex)) val = ds1*0.3 + ex*0.7;
+    } else if (type === 'tp') {
+      const ds1  = parseFloat(document.getElementById('d_'+matiere+'_ds1')?.value);
+      const dstp = parseFloat(document.getElementById('d_'+matiere+'_dstp')?.value);
+      const ex   = parseFloat(document.getElementById('d_'+matiere+'_ex')?.value);
+      if (!isNaN(ds1) && !isNaN(dstp) && !isNaN(ex)) val = ds1*0.15 + dstp*0.15 + ex*0.7;
+    } else if (type === 'ang') {
+      const ds1  = parseFloat(document.getElementById('d_'+matiere+'_ds1')?.value);
+      const oral = parseFloat(document.getElementById('d_'+matiere+'_oral')?.value);
+      if (!isNaN(ds1) && !isNaN(oral)) val = ds1*0.5 + oral*0.5;
+    } else if (type === 'tc') {
+      const ds1 = parseFloat(document.getElementById('d_'+matiere+'_ds1')?.value);
+      const ds2 = parseFloat(document.getElementById('d_'+matiere+'_ds2')?.value);
+      if (!isNaN(ds1) && !isNaN(ds2)) val = ds1*0.5 + ds2*0.5;
+    }
+    const el = document.getElementById('live_'+matiere);
+    if (el) el.querySelector('span').textContent = val !== undefined ? val.toFixed(2)+' / 20' : '—';
+  }
+
+  // ── Live calc S2 ──
+  // m1=BDD(std), m2=Analyse2(std), m3=Algèbre2(std), m4=Python(tp),
+  // m5=Algo(std), m6=Atelier2(tp), m7=Réseaux(tp), m8=SE2(std),
+  // m9=Culture(tc), m10=TC2(tc), m11=Anglais2(ang)
+  function liveCalc2(matiere, type) {
+    let val;
+    const pfx = 'd2_' + matiere + '_';
+    if (type === 'std') {
+      const ds1 = parseFloat(document.getElementById(pfx+'ds1')?.value);
+      const ex  = parseFloat(document.getElementById(pfx+'ex')?.value);
+      if (!isNaN(ds1) && !isNaN(ex)) val = ds1*0.3 + ex*0.7;
+    } else if (type === 'tp') {
+      const ds1  = parseFloat(document.getElementById(pfx+'ds1')?.value);
+      const dstp = parseFloat(document.getElementById(pfx+'dstp')?.value);
+      const ex   = parseFloat(document.getElementById(pfx+'ex')?.value);
+      if (!isNaN(ds1) && !isNaN(dstp) && !isNaN(ex)) val = ds1*0.15 + dstp*0.15 + ex*0.7;
+    } else if (type === 'ang') {
+      const ds1  = parseFloat(document.getElementById(pfx+'ds1')?.value);
+      const oral = parseFloat(document.getElementById(pfx+'oral')?.value);
+      if (!isNaN(ds1) && !isNaN(oral)) val = ds1*0.5 + oral*0.5;
+    } else if (type === 'tc') {
+      const ds1 = parseFloat(document.getElementById(pfx+'ds1')?.value);
+      const ds2 = parseFloat(document.getElementById(pfx+'ds2')?.value);
+      if (!isNaN(ds1) && !isNaN(ds2)) val = ds1*0.5 + ds2*0.5;
+    }
+    const el = document.getElementById('live2_'+matiere);
+    if (el) el.querySelector('span').textContent = val !== undefined ? val.toFixed(2)+' / 20' : '—';
+  }
+
+  function getMoyennes(mode, sem) {
+    sem = sem || 1;
+    let ms = {};
+
+    if (sem === 1) {
+      if (mode === 'general') {
+        for (let i = 1; i <= 10; i++) {
+          const v = parseFloat(document.getElementById('g_m'+i)?.value);
+          ms['m'+i] = isNaN(v) ? null : v;
+        }
+      } else {
+        const configs = {m1:'tp',m2:'std',m3:'std',m4:'std',m5:'std',m6:'tp',m7:'std',m8:'tp',m9:'ang',m10:'tc'};
+        for (const [key, type] of Object.entries(configs)) {
+          let v = null;
+          if (type === 'std') {
+            const ds1 = parseFloat(document.getElementById('d_'+key+'_ds1')?.value);
+            const ex  = parseFloat(document.getElementById('d_'+key+'_ex')?.value);
+            if (!isNaN(ds1) && !isNaN(ex)) v = ds1*0.3 + ex*0.7;
+          } else if (type === 'tp') {
+            const ds1  = parseFloat(document.getElementById('d_'+key+'_ds1')?.value);
+            const dstp = parseFloat(document.getElementById('d_'+key+'_dstp')?.value);
+            const ex   = parseFloat(document.getElementById('d_'+key+'_ex')?.value);
+            if (!isNaN(ds1) && !isNaN(dstp) && !isNaN(ex)) v = ds1*0.15 + dstp*0.15 + ex*0.7;
+          } else if (type === 'ang') {
+            const ds1  = parseFloat(document.getElementById('d_'+key+'_ds1')?.value);
+            const oral = parseFloat(document.getElementById('d_'+key+'_oral')?.value);
+            if (!isNaN(ds1) && !isNaN(oral)) v = ds1*0.5 + oral*0.5;
+          } else if (type === 'tc') {
+            const ds1 = parseFloat(document.getElementById('d_'+key+'_ds1')?.value);
+            const ds2 = parseFloat(document.getElementById('d_'+key+'_ds2')?.value);
+            if (!isNaN(ds1) && !isNaN(ds2)) v = ds1*0.5 + ds2*0.5;
+          }
+          ms[key] = v;
+        }
+      }
+    } else {
+      // S2: m1=BDD(std,c2), m2=Analyse2(std,c1.5), m3=Algèbre2(std,c1.5),
+      //     m4=Python(tp,c1), m5=Algo(std,c1.5), m6=Atelier2(tp,c1),
+      //     m7=Réseaux(tp,c2), m8=SE2(std,c1.5), m9=Culture(tc,c1),
+      //     m10=TC2(tc,c1), m11=Anglais2(ang,c1)
+      if (mode === 'general') {
+        for (let i = 1; i <= 11; i++) {
+          const v = parseFloat(document.getElementById('g2_m'+i)?.value);
+          ms['m'+i] = isNaN(v) ? null : v;
+        }
+      } else {
+        const configs2 = {m1:'std',m2:'std',m3:'std',m4:'tp',m5:'std',m6:'tp',m7:'tp',m8:'std',m9:'tc',m10:'tc',m11:'ang'};
+        for (const [key, type] of Object.entries(configs2)) {
+          let v = null;
+          const pfx = 'd2_'+key+'_';
+          if (type === 'std') {
+            const ds1 = parseFloat(document.getElementById(pfx+'ds1')?.value);
+            const ex  = parseFloat(document.getElementById(pfx+'ex')?.value);
+            if (!isNaN(ds1) && !isNaN(ex)) v = ds1*0.3 + ex*0.7;
+          } else if (type === 'tp') {
+            const ds1  = parseFloat(document.getElementById(pfx+'ds1')?.value);
+            const dstp = parseFloat(document.getElementById(pfx+'dstp')?.value);
+            const ex   = parseFloat(document.getElementById(pfx+'ex')?.value);
+            if (!isNaN(ds1) && !isNaN(dstp) && !isNaN(ex)) v = ds1*0.15 + dstp*0.15 + ex*0.7;
+          } else if (type === 'ang') {
+            const ds1  = parseFloat(document.getElementById(pfx+'ds1')?.value);
+            const oral = parseFloat(document.getElementById(pfx+'oral')?.value);
+            if (!isNaN(ds1) && !isNaN(oral)) v = ds1*0.5 + oral*0.5;
+          } else if (type === 'tc') {
+            const ds1 = parseFloat(document.getElementById(pfx+'ds1')?.value);
+            const ds2 = parseFloat(document.getElementById(pfx+'ds2')?.value);
+            if (!isNaN(ds1) && !isNaN(ds2)) v = ds1*0.5 + ds2*0.5;
+          }
+          ms[key] = v;
+        }
+      }
+    }
+    return ms;
+  }
+
+  function calculate(mode, sem) {
+    const ms = getMoyennes(mode, sem);
+    const coefs1 = {m1:1.5,m2:1.5,m3:1.5,m4:1.5,m5:2,m6:1.5,m7:2,m8:1.5,m9:1,m10:1};
+    const coefs2 = {m1:2,m2:1.5,m3:1.5,m4:1,m5:1.5,m6:1,m7:2,m8:1.5,m9:1,m10:1,m11:1};
+    const coefs = sem === 2 ? coefs2 : coefs1;
+    let totalWeighted = 0, totalCoef = 0, missing = [];
+    for (const [key, coef] of Object.entries(coefs)) {
+      if (ms[key] === null || ms[key] === undefined) { missing.push(key); continue; }
+      totalWeighted += ms[key] * coef;
+      totalCoef += coef;
+    }
+    if (totalCoef === 0) { alert('Veuillez saisir au moins une note.'); return; }
+    const moy = totalWeighted / totalCoef;
+    const boxId = 'result-s'+sem+'-'+mode;
+    const box = document.getElementById(boxId);
+    let statusClass, statusText;
+    if (moy >= 10) { statusClass = 'status-pass'; statusText = '✓ Admis(e)'; }
+    else if (moy >= 8) { statusClass = 'status-warn'; statusText = '⚠ Rattrapage'; }
+    else { statusClass = 'status-fail'; statusText = '✗ Non admis(e)'; }
+    const scoreColor = moy >= 10 ? 'var(--success)' : moy >= 8 ? 'var(--warning)' : 'var(--danger)';
+    box.innerHTML = `
+      <div class="result-label">Moyenne Générale — Semestre ${sem}</div>
+      <div class="result-score" style="color:${scoreColor}">${moy.toFixed(2)}<span style="font-size:1.5rem;color:var(--muted)">/20</span></div>
+      <div class="result-status ${statusClass}">${statusText}</div>
+      ${missing.length > 0 ? `<p style="margin-top:16px;font-size:11px;color:var(--muted)">Note : ${missing.length} matière(s) non saisie(s) — exclue(s) du calcul.</p>` : ''}
+    `;
+    box.classList.add('show');
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function updateResult(mode, sem) {
+    const boxId = 'result-s'+sem+'-'+mode;
+    const box = document.getElementById(boxId);
+    if (box && box.classList.contains('show')) calculate(mode, sem);
+  }
+</script>
+</body>
+</html>
